@@ -3,7 +3,7 @@
   connection: local
   
   tasks:
-  - name: Running mvn install
+  - name: Running mvn clean install (building app)
     shell: "mvn clean install"
     register: mvn_result
 
@@ -16,8 +16,13 @@
       username: brunoguidone
       password: "{{ lookup('env','dockerhub_pass') }}"
       email: brunoguidone@hotmail.com
+    register: login_dockerhub_result
+
+  - name: dockerhub login docker hub output
+    debug:
+     var: login_dockerhub_result
   
-  - name: Build an image and push it to a private repo
+  - name: Build docker image and push it to docker hub
     docker_image:
       build:
         path: ./
@@ -25,8 +30,13 @@
       tag: v1
       push: yes
       source: build
+    register: build_push_image_result
 
-  - name: Create app container
+  - name: image build and push output
+    debug:
+     var: build_push_image_result
+
+  - name: Create application docker container
     docker_container:
       name: app-demo
       image: brunoguidone/app-demo:v1
@@ -34,10 +44,20 @@
       recreate: yes
       ports:
         - 8080:8080
+    register: create_container_result
   
+  - name: Create application container output
+    debug:
+     var: create_container_result
+
   - name: Restart a container
     docker_container:
       name: app-demo
       image: brunoguidone/app-demo:v1
       state: started
       restart: yes
+    register: restart_container_result
+
+  - name: restart container output
+    debug:
+     var: restart_container_result
