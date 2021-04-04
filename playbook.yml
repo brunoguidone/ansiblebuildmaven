@@ -1,9 +1,6 @@
 ---
 - hosts: localhost
-  vars:
-  - warName: demo.war
-  - image: app-demo-image
-
+  
   tasks:
   - name: Running mvn install
     shell: "mvn clean install"
@@ -12,18 +9,34 @@
   - name: mvn install task output
     debug:
      var: mvn_result
-  
-  - name: Build Docker image
-    docker_image: path=./Dockerfile name={{image}} state=build
 
-  - name: Tag image
-    command: docker tag -f {{image}}
+  - name: Log into DockerHub
+    docker_login:
+      username: brunoguidone
+      password: {{ lookup('env','dockerhub_pass') }}
+      email: brunoguidone@hotmail.com
+  
+  - name: Build an image and push it to a private repo
+    docker_image:
+      build:
+        path: ./
+      name: brunoguidone/app-demo
+      tag: v1
+      push: yes
+      source: build
 
   - name: Create app container
     docker_container:
       name: app-demo
-      image: {{image}}
+      image: brunoguidone/app-demo:v1
       state: started
       recreate: yes
-      exposed_ports:
-        - 8080
+      ports:
+        - 8080:8080
+  
+  - name: Restart a container
+    docker_container:
+      name: app-demo
+      image: brunoguidone/app-demo:v1
+      state: started
+      restart: yes
