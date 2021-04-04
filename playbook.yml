@@ -1,0 +1,29 @@
+---
+- hosts: localhost
+  vars:
+  - warName: demo.war
+  - image: app-demo-image
+
+  tasks:
+  - name: Running mvn install
+    shell: "mvn clean install"
+    register: mvn_result
+
+  - name: mvn install task output
+    debug:
+     var: mvn_result
+  
+  - name: Build Docker image
+    docker_image: path=./Dockerfile name={{image}} state=build
+
+  - name: Tag image
+    command: docker tag -f {{image}}
+
+  - name: Create app container
+    docker_container:
+      name: app-demo
+      image: {{image}}
+      state: started
+      recreate: yes
+      exposed_ports:
+        - 8080
